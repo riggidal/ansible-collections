@@ -1,3 +1,0 @@
----
-- ansible.builtin.import_tasks: 1_sync_source_files.yml
-- ansible.builtin.import_tasks: 2_apply_policies.yml

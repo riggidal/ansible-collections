@@ -1,7 +1,0 @@
----
-- name: Restart docker
-  ansible.builtin.service:
-      name: docker
-      state: "{{ packages_docker_restart_handler_state }}"
-  ignore_errors: "{{ ansible_check_mode }}"
-  when: packages_docker_service_manage | bool

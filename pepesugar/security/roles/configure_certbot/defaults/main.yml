@@ -1,8 +1,0 @@
----
-configure_certbot_defaults:
-  domains: []
-  webroot: /var/www/certbot
-  email: m.draevich@elmsoft.ru
-  nginx_container_name: itds-nginx-1
-  certs_path: /home/tds/itds/certs
-  deploy_hook_filename: certbot-deploy-hook.sh

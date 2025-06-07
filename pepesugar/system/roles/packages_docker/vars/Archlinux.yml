@@ -1,3 +1,0 @@
----
-packages_docker_packages: "docker"
-packages_docker_compose_package: docker-compose

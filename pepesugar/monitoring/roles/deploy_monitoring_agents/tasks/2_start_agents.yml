@@ -1,7 +1,0 @@
----
-- name: Start monitoring agents via docker-compose.yml
-  become: true
-  ansible.builtin.command:
-    cmd: "docker compose up -d --force-recreate"
-  args:
-    chdir: "{{ config_root }}/{{ role_name }}"

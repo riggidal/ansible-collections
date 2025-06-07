@@ -1,4 +1,0 @@
-create blacklist hash:ip family inet hashsize 1024 maxelem 65536
-{% for ip in configure_iptables.blacklist %}
-add blacklist {{ ip }}
-{% endfor %}
