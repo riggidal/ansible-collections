@@ -1,44 +1,44 @@
 ---
 driver:
-  name: podman
+    name: podman
 
 dependency:
-  name: galaxy
+    name: galaxy
 
 platforms:
-  - name: centos
-    image: docker.io/geerlingguy/docker-centos8-ansible
-    pre_build_image: true
-  - name: ubuntu
-    image: docker.io/geerlingguy/docker-ubuntu2204-ansible
-    pre_build_image: true
-  - name: debian
-    image: docker.io/geerlingguy/docker-debian12-ansible
-    pre_build_image: true
+    - name: almalinux
+      image: docker.io/kirillzak/docker-almalinux-ansible
+      pre_build_image: true
+    - name: ubuntu
+      image: docker.io/geerlingguy/docker-ubuntu2204-ansible
+      pre_build_image: true
+    - name: debian
+      image: docker.io/geerlingguy/docker-debian12-ansible
+      pre_build_image: true
 
 provisioner:
-  name: ansible
-  playbooks:
-    converge: converge.yml
-  inventory:
-    host_vars:
-      ubuntu:
-        packages:
-          - htop
-          - podman
-          - podman-compose
-      debian:
-        packages:
-          - htop
-          - tmux
-      centos:
-        packages:
-          - htop
-          - tmux
-          - podman
-          - podman-compose
+    name: ansible
+    playbooks:
+        converge: converge.yml
+    inventory:
+        host_vars:
+            ubuntu:
+                packages:
+                    - htop
+                    - podman
+                    - podman-compose
+            debian:
+                packages:
+                    - htop
+                    - tmux
+            almalinux:
+                packages:
+                    - htop
+                    - tmux
+                    - podman
+                    - podman-compose
 
 verifier:
-  name: testinfra
-  options:
-    sudo: true
+    name: testinfra
+    options:
+        sudo: true
