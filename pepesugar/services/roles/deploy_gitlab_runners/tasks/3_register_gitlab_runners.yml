@@ -1,17 +1,20 @@
+---
 - name: Check if Gitlab runner folder contains registered configuration
-  stat:
+  ansible.builtin.stat:
     path: "{{ config_root }}/{{ role_name }}/{{ item.name }}/config.toml"
-  with_items: 
+  with_items:
     - "{{ runners }}"
   register: is_registered
 
 - name: Register Gitlab runner if not registered before
-  become: yes
-  shell:
-    cmd: "docker compose exec -it {{ item.item.name }} gitlab-runner register --non-interactive --name '{{ item.item.name }}' --maintenance-note '{{ item.item.description }}' --url '{{ item.item.gitlab_url }}' --registration-token '{{ item.item.register_token }}' --executor docker --docker-image '{{ item.item.job_image }}' --tag-list '{{ item.item.tags }}' --run-untagged={{ item.item.allow_untagged }}"
+  become: true
+  ansible.builtin.command:
+    cmd: "docker compose exec -it {{ item.item.name }} gitlab-runner register --non-interactive --name '{{ item.item.name }}' --maintenance-note '{{ item.item.description
+      }}' --url '{{ item.item.gitlab_url }}' --registration-token '{{ item.item.register_token }}' --executor docker --docker-image '{{ item.item.job_image }}' --tag-list
+      '{{ item.item.tags }}' --run-untagged={{ item.item.allow_untagged }}"
     chdir: "{{ config_root }}/{{ role_name }}"
   when: not item.stat.exists
-  with_items: 
+  with_items:
     - "{{ is_registered.results }}"
   loop_control:
     label: "{{ item.item.name }}"

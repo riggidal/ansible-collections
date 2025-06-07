@@ -1,16 +1,14 @@
+---
 deploy_monitoring_agents:
   # a list of common labels (added to each scrape configuration)
   common_labels: {}
-
   # external docker networks to connect
   # a list of docker network names
   external_networks: []
-
   # scrape & push agent
   alloy:
     # a list of address:port pairs
     scrape_targets: []
-
   # exporter for containers
   # OPTIONAL
   cadvisor:

@@ -1,6 +1,6 @@
 ---
 - name: Install Docker via external role
   ansible.builtin.include_role:
-      name: pepesugar.system.packages_docker
+    name: pepesugar.system.packages_docker
   vars:
-      docker_install_compose_plugin: true
+    docker_install_compose_plugin: true

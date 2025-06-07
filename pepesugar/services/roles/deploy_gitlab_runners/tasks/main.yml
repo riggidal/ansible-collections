@@ -1,3 +1,4 @@
-- import_tasks: 1_sync_source_files.yml
-- import_tasks: 2_run_gitlab_runners.yml
-- import_tasks: 3_register_gitlab_runners.yml
+---
+- ansible.builtin.import_tasks: 1_sync_source_files.yml
+- ansible.builtin.import_tasks: 2_run_gitlab_runners.yml
+- ansible.builtin.import_tasks: 3_register_gitlab_runners.yml

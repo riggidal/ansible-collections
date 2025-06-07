@@ -1,32 +1,31 @@
 ---
 galaxy_info:
-    author: riggidal
-    description: the role for installing packages
-    company: pepesugar
+  author: riggidal
+  description: the role for installing packages
+  company: pepesugar
 
-    platforms:
-        - name: EL
-          versions:
-              - "8"
-              - "9"
-        - name: AlmaLinux
-          versions:
-              - "8"
-              - "9"
-        - name: Debian
-          versions:
-              - bullseye
-              - bookworm
-        - name: Ubuntu
-          versions:
-              - focal
-              - jammy
-              - noble
+  platforms:
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: AlmaLinux
+      versions:
+        - "8"
+        - "9"
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
 
-    license: GPL-3.0-only
+  license: GPL-3.0-only
 
-    min_ansible_version: "2.1"
+  min_ansible_version: "2.1"
 
-    galaxy_tags: [applications, packages, linux]
-
+  galaxy_tags: [applications, packages, linux]
 dependencies: []

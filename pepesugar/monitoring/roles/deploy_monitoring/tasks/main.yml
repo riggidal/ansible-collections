@@ -1,2 +1,3 @@
-- import_tasks: 1_sync_source_files.yml
-- import_tasks: 2_start_monitoring.yml
+---
+- ansible.builtin.import_tasks: 1_sync_source_files.yml
+- ansible.builtin.import_tasks: 2_start_monitoring.yml

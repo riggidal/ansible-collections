@@ -1,11 +1,12 @@
+---
 - name: Make sure pip3 is present
   ansible.builtin.package:
-      name:
-          - python3
-          - python3-pip
-      state: present
+    name:
+      - python3
+      - python3-pip
+    state: present
 
 - name: Install podman-compose via pip
   ansible.builtin.pip:
-      name: podman-compose
-      executable: pip3
+    name: podman-compose
+    executable: pip3

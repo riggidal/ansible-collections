@@ -1,29 +1,30 @@
+---
 - name: Prepare directories on the remote server
-  become: yes
-  file:
+  become: true
+  ansible.builtin.file:
     path: "{{ config_root }}/{{ item }}"
     state: directory
     owner: root
     group: root
-    mode: 0755
+    mode: "0755"
   with_items:
     - "{{ role_name }}"
     - "{{ role_name }}/alloy"
 
 - name: Copy docker-compose.yml file
-  become: yes
-  template:
+  become: true
+  ansible.builtin.template:
     src: "docker-compose.yml.j2"
     dest: "{{ config_root }}/{{ role_name }}/docker-compose.yml"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
 
 - name: Copy config.alloy file
-  become: yes
-  template:
+  become: true
+  ansible.builtin.template:
     src: "config.alloy.j2"
     dest: "{{ config_root }}/{{ role_name }}/alloy/config.alloy"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"

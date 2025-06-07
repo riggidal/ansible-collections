@@ -1,12 +1,9 @@
+---
 - name: Validate the inputs for a host
-  import_tasks: validate.yml
-
+  ansible.builtin.import_tasks: validate.yml
 - name: Create groups and permission sets
-  import_tasks: create_groups.yml
-
+  ansible.builtin.import_tasks: create_groups.yml
 - name: Create users and add ssh keys
-  import_tasks: create_users.yml
-
+  ansible.builtin.import_tasks: create_users.yml
 - name: Remove unused users
-  import_tasks: delete_users.yml
-
+  ansible.builtin.import_tasks: delete_users.yml
