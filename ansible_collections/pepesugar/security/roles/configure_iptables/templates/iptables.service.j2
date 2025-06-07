@@ -1,0 +1,13 @@
+[Unit]
+Description=iptables service to control policy persistance after reboot
+After=network.target
+After=docker.service
+
+[Service]
+Type=oneshot
+ExecStart="{{ config_root }}/{{ role_name }}/systemd-iptables.sh"
+ExecStop=bash -c "export RESTORE_ONLY=true; {{ config_root }}/{{ role_name }}/systemd-iptables.sh"
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

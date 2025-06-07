@@ -1,0 +1,8 @@
+---
+- name: Starting Iptables service
+  become: true
+  ansible.builtin.systemd:
+    name: "iptables"
+    state: restarted
+    enabled: true
+    daemon_reload: true

@@ -1,0 +1,8 @@
+---
+- name: Validate user configuration
+  ansible.builtin.fail:
+    msg: "{{ item.key }} is not defined within manage_users_global"
+  when:
+    - item.key not in (manage_users_global.users | default({}, true)).keys()
+  with_dict:
+    - "{{ manage_users | default({}, true) }}"

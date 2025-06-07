@@ -1,0 +1,7 @@
+---
+- name: Start Gitlab server via docker-compose.yml
+  become: true
+  ansible.builtin.command:
+    cmd: "docker compose up -d"
+  args:
+    chdir: "{{ config_root }}/{{ role_name }}"

@@ -1,0 +1,19 @@
+---
+- name: Ensure destination directory exists
+  become: true
+  ansible.builtin.file:
+    path: "{{ config_root }}/{{ role_name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Sync monitoring config repo to target host
+  ansible.posix.synchronize:
+    src: "{{ deploy_monitoring.path }}/"
+    dest: "{{ config_root }}/{{ role_name }}/"
+    delete: true
+    recursive: true
+    rsync_opts:
+      - "--rsync-path='sudo rsync'"
+  delegate_to: localhost

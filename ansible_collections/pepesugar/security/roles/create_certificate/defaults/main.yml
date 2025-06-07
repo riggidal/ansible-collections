@@ -1,0 +1,6 @@
+---
+create_certificate_defaults:
+  domains: []
+  output_dir: "/home/tds/itds/certs"
+  key_filename: "privkey.pem"
+  cert_filename: "fullchain.pem"

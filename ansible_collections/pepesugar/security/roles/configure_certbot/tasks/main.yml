@@ -1,0 +1,60 @@
+---
+- name: Merge configure_certbot with defaults
+  ansible.builtin.set_fact:
+    configure_certbot: "{{ configure_certbot_defaults | combine(configure_certbot | default({}), recursive=True) }}"
+
+- name: Print the settings
+  ansible.builtin.debug:
+    msg: "{{ configure_certbot }}"
+
+- name: Ensure Certbot is installed
+  become: true
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+
+- name: Check if Nginx container is running
+  become: true
+  ansible.builtin.shell: >
+    docker ps | grep "{{ configure_certbot.nginx_container_name }}"
+- name: Create role directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ config_root }}/{{ role_name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Create webroot directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ configure_certbot.webroot }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy deploy hook script to target machine
+  become: true
+  ansible.builtin.copy:
+    src: certbot-deploy-hook.sh
+    dest: "{{ config_root }}/{{ role_name }}/{{ configure_certbot.deploy_hook_filename }}"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Obtain SSL certificates for multiple domains
+  become: true
+  ansible.builtin.command: >
+    certbot certonly --webroot --non-interactive --agree-tos
+      --webroot-path {{ configure_certbot.webroot }}
+      --domain {{ domain_item }}
+      --email {{ configure_certbot.email }}
+      --deploy-hook "bash {{ config_root }}/{{ role_name }}/{{ configure_certbot.deploy_hook_filename }} -d {{ domain_item }} -p {{ configure_certbot.certs_path }}
+    && docker exec {{ configure_certbot.nginx_container_name }} nginx -s reload"
+  args:
+    creates: "/etc/letsencrypt/live/{{ domain_item }}/fullchain.pem"
+  with_items: "{{ configure_certbot.domains }}"
+  loop_control:
+    loop_var: domain_item
