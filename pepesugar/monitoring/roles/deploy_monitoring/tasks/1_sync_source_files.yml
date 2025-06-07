@@ -1,0 +1,18 @@
+- name: Ensure destination directory exists
+  become: yes
+  file:
+    path: "{{ config_root }}/{{ role_name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Sync monitoring config repo to target host
+  synchronize:
+    src: "{{ deploy_monitoring.path }}/"
+    dest: "{{ config_root }}/{{ role_name }}/"
+    delete: yes
+    recursive: yes
+    rsync_opts:
+      - "--rsync-path='sudo rsync'"
+  delegate_to: localhost

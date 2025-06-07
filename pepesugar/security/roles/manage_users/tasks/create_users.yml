@@ -1,0 +1,21 @@
+- name: Create users
+  become: yes
+  user:
+    name: "{{ item.key }}"
+    groups: "{{ (manage_users_global.users[item.key] | combine(item.value)).permissions }}"
+    shell: /bin/bash
+    state: present
+  with_dict: 
+    - "{{ manage_users | default({}, true) }}"
+
+- name: Set up SSH keys
+  become: yes
+  authorized_key:
+    user: "{{ item.key }}"
+    key: "{{ (manage_users_global.users[item.key] | combine(item.value)).ssh_keys }}"
+    exclusive: true
+    state: present
+  with_dict: 
+    - "{{ manage_users | default({}, true) }}"
+
+

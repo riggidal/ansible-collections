@@ -1,0 +1,7 @@
+- name: Starting Iptables service
+  become: yes
+  systemd:
+   name: 'iptables'
+   state: restarted
+   enabled: yes
+   daemon_reload: yes

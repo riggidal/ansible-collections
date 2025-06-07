@@ -1,0 +1,19 @@
+- name: Prepare directories on the remote server
+  become: yes
+  file:
+    path: "{{ config_root }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - "{{ role_name }}"
+    
+- name: Copy docker-compose.yml file to deploy Registry server
+  become: yes
+  template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ config_root }}/{{ role_name }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: 0644

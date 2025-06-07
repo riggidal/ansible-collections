@@ -1,0 +1,26 @@
+---
+# vars file for packages
+packages_map:
+  # --- ставим обычный пакет ---
+
+  # --- самый короткий синтаксис (строка) ---
+  htop: htop
+  curl: curl
+  tmux: tmux
+
+  podman: podman
+  podman-compose:
+    include: installers/install_podman_compose.yml
+
+  # --- строка внутри dict'а ---
+  nginx:
+    pkgs: nginx
+
+  # --- «рядом везде, но у RHEL две rpm» ---
+  openssl:
+    pkgs:
+      default: openssl
+      RedHat: [openssl, openssl-devel]
+  # --- через спец-инсталлятор ---
+  docker:
+    include: installers/install_docker.yml

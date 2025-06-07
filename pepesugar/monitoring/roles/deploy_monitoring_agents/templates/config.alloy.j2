@@ -1,0 +1,215 @@
+prometheus.exporter.self "alloy" {}
+
+prometheus.scrape "alloy_metrics" {
+  targets = prometheus.exporter.self.alloy.targets
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+// Это блокирует показатели, поступающие из node_exporter, для добавления стандартных меток
+discovery.relabel "integrations_node_exporter" {
+  targets = prometheus.exporter.unix.integrations_node_exporter.targets
+
+  rule {
+    // Установите метку экземпляра на имя хоста
+    target_label = "instance"
+    replacement  = "{{ inventory_hostname }}"
+  }
+
+  rule {
+    // Задайте стандартное имя задания для всех показателей node_exporter
+    target_label = "job"
+    replacement = "integrations/node_exporter"
+  }
+}
+
+// Настройте интеграцию с node_exporter для сбора системных показателей
+prometheus.exporter.unix "integrations_node_exporter" {
+  procfs_path = "/host/proc"
+  rootfs_path = "/rootfs"
+  sysfs_path  = "/host/sys"
+
+  // Disable unnecessary collectors to reduce overhead
+  disable_collectors = ["ipvs", "btrfs", "infiniband", "xfs", "zfs"]
+  enable_collectors = ["meminfo"]
+
+  filesystem {
+    // Исключите типы файловых систем, которые не имеют отношения к мониторингу
+    fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+    // Исключите точки подключения, которые не имеют отношения к мониторингу
+    mount_points_exclude = "^/(dev|host|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
+    // Тайм-аут для операций с файловой системой
+    mount_timeout        = "5s"
+  }
+
+  netclass {
+    // Игнорируйте виртуальные и контейнерные сетевые интерфейсы
+    ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+
+  netdev {
+    // Исключить виртуальные и контейнерные сетевые интерфейсы из показателей устройств
+    device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+}
+
+// Определите, как извлекать метрики из node_exporter
+prometheus.scrape "integrations_node_exporter" {
+scrape_interval = "30s"
+  // Используйте цели с надписями из компонента discovery.reliable
+  targets    = discovery.relabel.integrations_node_exporter.output
+  // Отправьте очищенные показатели в компонент повторной маркировки
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+// Компоненты для сбора метрик
+prometheus.scrape "metrics" {
+  targets = [
+    {% for item in deploy_monitoring_agents.alloy.scrape_targets %}
+    { "__address__" = "{{ item }}", "job" = "{{ item.split(':')[0] }}", "instance" = "{{ inventory_hostname }}",
+      {% for key, value in deploy_monitoring_agents.common_labels.items() %}
+      "{{ key }}" = "{{ value }}",
+      {% endfor %}
+    },
+    {% endfor %}
+  ]
+  scrape_interval = "30s"
+  forward_to = [prometheus.remote_write.local.receiver]
+}
+
+// Определите, куда отправлять показатели для хранения
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://vmsingle:8428/api/v1/write"
+    queue_config {
+      capacity = 10000
+      max_backoff = "5s"
+    }
+  }
+}
+
+// Сбор логов из журнала systemd для интеграции с node_exporter
+loki.source.journal "logs_integrations_integrations_node_exporter_journal_scrape" {
+  // Собирайте только логи за последние 24 часа
+  max_age       = "24h0m0s"
+  // Примените правила повторной маркировки к журналам
+  relabel_rules = discovery.relabel.logs_integrations_integrations_node_exporter_journal_scrape.rules
+  // Отправляйте журналы в экземпляр Loki
+  forward_to    = [loki.write.local.receiver]
+}
+
+// Определите, какие файлы журнала следует собирать для node_exporter
+local.file_match "logs_integrations_integrations_node_exporter_direct_scrape" {
+  path_targets = [{
+    // Целевой локальный хост для сбора журналов
+    __address__ = "localhost",
+    // Сбор стандартных системных журналов
+    __path__    = "/var/log/{syslog,messages,*.log}",
+    // Добавьте метку экземпляра с именем хоста
+    instance    = "{{ inventory_hostname }}",
+    // Добавить метку задания для журналов
+    job         = "integrations/node_exporter",
+  }]
+}
+
+// Определите правила повторной маркировки для журналов systemd journal
+discovery.relabel "logs_integrations_integrations_node_exporter_journal_scrape" {
+  targets = []
+
+  rule {
+    // Извлеките информацию о системном блоке на этикетку
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+
+  rule {
+    // Извлеките информацию об идентификаторе загрузки на этикетку
+    source_labels = ["__journal__boot_id"]
+    target_label  = "boot_id"
+  }
+
+  rule {
+    // Извлечение транспортной информации на этикетку
+    source_labels = ["__journal__transport"]
+    target_label  = "transport"
+  }
+
+  rule {
+    // Извлеките приоритет журнала в метку уровня
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+}
+
+// Сбор логов из файлов для node_exporter
+loki.source.file "logs_integrations_integrations_node_exporter_direct_scrape" {
+  // Используйте целевые объекты, определенные в локальном файле file_matches
+  targets    = local.file_match.logs_integrations_integrations_node_exporter_direct_scrape.targets
+  // Отправляйте журналы в экземпляр Loki
+  forward_to = [loki.write.local.receiver]
+}
+
+// Открывайте контейнеры Docker и извлекайте метаданные
+discovery.docker "linux" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// Определите правило повторной маркировки, чтобы создать имя службы на основе имени контейнера
+discovery.relabel "logs_integrations_docker" {
+    targets = []
+
+    rule {
+        source_labels = ["__meta_docker_container_name"]
+        regex = "/(.*)"
+        target_label = "container"
+    }
+
+    rule {
+        source_labels = ["__meta_docker_container_log_stream"]
+        regex = "/(.*)"
+        target_label = "logstream"
+    }
+
+    rule {
+        source_labels = ["__meta_docker_container_label_org_pepe_role"]
+        regex = "/(.*)"
+        target_label = "org_pepe_role"
+    }
+}
+
+// Настройте компонент loki.source.docker для сбора журналов из контейнеров Docker
+loki.source.docker "default" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.linux.targets
+  labels     = { "platform" = "docker" }
+  relabel_rules = discovery.relabel.logs_integrations_docker.rules
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "server_logs_files" {
+    path_targets = [{
+        __address__ = "localhost",
+        __path__ = "/var/log/secure",
+        job = "server-logs",
+        instance = "{{ inventory_hostname }}",
+{% for key, value in deploy_monitoring_agents.common_labels.items() %}
+        {{ key }} = "{{ value }}",
+{% endfor %}
+    }]
+    sync_period  = "5s"
+}
+
+loki.source.file "server_logs_scrape" {
+    targets    = local.file_match.server_logs_files.targets
+    forward_to = [loki.write.local.receiver]
+    tail_from_end = true
+}
+
+// Определите, куда отправлять журналы для хранения
+loki.write "local" {
+    endpoint {
+        url ="http://loki:3100/loki/api/v1/push"
+    }
+}
+
+// Включить функции оперативной отладки (пустая конфигурация означает использование значений по умолчанию)
+livedebugging{}

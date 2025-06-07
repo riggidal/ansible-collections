@@ -1,0 +1,33 @@
+# roles/packages/tasks/installers/install_podman_compose.yml
+- name: Detect native availability for podman-compose
+  ansible.builtin.set_fact:
+    _pc_native_ok: >-
+      {{
+        (ansible_os_family == "RedHat" and
+         ansible_distribution_major_version | int >= 8) or
+        (ansible_distribution == "Debian" and
+         ansible_distribution_major_version | int >= 12)
+      }}
+
+# --- native rpm/deb ----------------------------------------------------------
+- name: Install podman-compose from distro repo
+  ansible.builtin.package:
+    name: podman-compose
+    state: present
+  register: _pc_native_result
+  when: _pc_native_ok
+  ignore_errors: true # на случай недоступного зеркала
+  changed_when: _pc_native_result is succeeded
+
+# --- fallback: pip -----------------------------------------------------------
+- name: Make sure pip3 is present
+  ansible.builtin.package:
+    name: python3-pip
+    state: present
+  when: _pc_native_result is failed or not _pc_native_ok
+
+- name: Install podman-compose via pip
+  ansible.builtin.pip:
+    name: podman-compose
+    executable: pip3
+  when: _pc_native_result is failed or not _pc_native_ok

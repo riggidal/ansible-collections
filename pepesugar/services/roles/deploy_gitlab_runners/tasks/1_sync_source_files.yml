@@ -1,0 +1,22 @@
+- name: Prepare directories on the remote server
+  become: yes
+  file:
+    path: "{{ config_root }}/{{ role_name }}/{{ item.name }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+    recurse: yes
+  with_items:
+    - "{{ runners }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Copy docker-compose.yml file to deploy Gitlab server
+  become: yes
+  template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ config_root }}/{{ role_name }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: 0644

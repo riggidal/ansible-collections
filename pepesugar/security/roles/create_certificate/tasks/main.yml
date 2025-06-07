@@ -1,0 +1,40 @@
+---
+- name: Merge create_certificate with defaults
+  set_fact:
+    create_certificate: "{{ create_certificate_defaults | combine(create_certificate | default({}), recursive=True) }}"
+
+- name: Print the settings
+  debug:
+    msg: "{{ create_certificate }}"
+
+- name: Ensure OpenSSL is installed
+  become: yes
+  apt:
+    name: openssl
+    state: present
+
+- name: Create directories for each domain
+  become: yes
+  file:
+    path: "{{ create_certificate.output_dir }}/{{ domain_item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  with_items: "{{ create_certificate.domains }}"
+  loop_control:
+    loop_var: domain_item
+
+- name: Generate self-signed SSL certificates for multiple domains
+  become: yes
+  command: >
+    openssl req -x509 -newkey rsa:4096 -sha256 -days 365 -nodes 
+      -keyout {{ create_certificate.output_dir }}/{{ domain_item }}/{{ create_certificate.key_filename }} 
+      -out {{ create_certificate.output_dir }}/{{ domain_item }}/{{ create_certificate.cert_filename }} 
+      -subj "/CN={{ domain_item }}" 
+      -addext "subjectAltName=DNS:{{ domain_item }}"
+  args:
+    creates: "{{ create_certificate.output_dir }}/{{ domain_item }}/{{ create_certificate.cert_filename }}"
+  with_items: "{{ create_certificate.domains }}"
+  loop_control:
+    loop_var: domain_item

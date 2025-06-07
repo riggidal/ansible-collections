@@ -1,0 +1,26 @@
+
+services:
+
+  gitlab:
+    image: {{ deploy_gitlab_server.image }}
+    restart: always
+    hostname: 'git.itorum.ru'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url '{{ deploy_gitlab_server.external_url }}'
+        gitlab_rails['gitlab_shell_ssh_port'] = 22
+        nginx['redirect_http_to_https'] = true
+        letsencrypt['enable'] = true
+        letsencrypt['contact_emails'] = ['{{ deploy_gitlab_server.acme_email }}']
+        
+    ports: {{ deploy_gitlab_server.ports }}
+    volumes:
+      - './src/config:/etc/gitlab'
+      - './src/logs:/var/log/gitlab'
+      - './src/data:/var/opt/gitlab'
+    shm_size: '256m'
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "3"
+        max-size: "10m"

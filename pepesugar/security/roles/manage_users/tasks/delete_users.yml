@@ -1,0 +1,13 @@
+- name: Remove unused users
+  become: yes
+  user:
+    name: "{{ item.key }}"
+    state: absent
+    remove: true
+  when:
+    - item.key not in (manage_users | default({}, true)).keys()
+    - item.key not in ['root']
+  with_dict: 
+    - "{{ manage_users_global.users | default({}, true) }}"
+
+

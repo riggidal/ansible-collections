@@ -1,0 +1,68 @@
+---
+# tasks file for packages
+- name: Load packages vars
+  ansible.builtin.include_vars: main.yml
+
+- name: Resolve packages
+  vars:
+    os_family: "{{ ansible_os_family }}"
+  ansible.builtin.set_fact:
+    _plain_pkgs: >-
+      {{
+        (_plain_pkgs | default([]))
+        + (
+            (packages_map[item] is string)
+            | ternary([packages_map[item]], [])
+          )
+        + (
+            (packages_map[item] is mapping
+             and packages_map[item].pkgs is defined
+             and packages_map[item].pkgs is string)
+            | ternary([packages_map[item].pkgs], [])
+          )
+        + (
+            (packages_map[item] is mapping
+             and packages_map[item].pkgs is mapping)
+            | ternary(
+                packages_map[item].pkgs[os_family]
+                  | default(packages_map[item].pkgs.default | default([])),
+                []
+              )
+          )
+      }}
+    _custom_files: >-
+      {{
+        (_custom_files | default([]))
+        + (
+            (packages_map[item] is mapping
+             and packages_map[item].include is defined)
+            | ternary([packages_map[item].include], [])
+          )
+      }}
+  loop: "{{ packages | default([]) }}"
+  when: packages_map[item] is defined
+
+# --- кастомные инсталляторы (docker, nginx и т. д.) ---
+- name: Run custom installers
+  ansible.builtin.include_tasks: "{{ item }}"
+  loop: "{{ _custom_files | unique }}"
+  when: _custom_files | length > 0
+
+# --- обычные пакеты ---
+- name: Prepare for EL family
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Refresh APT cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_pkg_mgr == "apt"
+
+- name: Install regular packages
+  ansible.builtin.package:
+    name: "{{ _plain_pkgs | unique }}"
+    state: present
+  when: _plain_pkgs | length > 0

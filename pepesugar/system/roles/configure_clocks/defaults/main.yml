@@ -1,0 +1,13 @@
+---
+# defaults file for ansible-timedatectl
+
+configure_clocks_timeservers:
+  - 0.ru.pool.ntp.org
+  - 1.ru.pool.ntp.org
+  - 2.ru.pool.ntp.org
+  - 3.ru.pool.ntp.org
+
+configure_clocks_timeservers_fallback:
+  - pool.ntp.org
+
+configure_clocks_timezone: UTC
