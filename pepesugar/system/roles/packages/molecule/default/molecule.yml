@@ -37,8 +37,3 @@ provisioner:
                     - tmux
                     - podman
                     - podman-compose
-
-verifier:
-    name: testinfra
-    options:
-        sudo: true
