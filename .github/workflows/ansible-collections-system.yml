@@ -1,0 +1,49 @@
+name: Release Ansible Collection
+
+on:
+  push:
+    paths:
+      - 'pepesugar/system/**'
+    branches: [master]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python + Ansible
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install ansible
+
+      - name: Bump patch version
+        id: version
+        run: |
+          cd pepesugar/system
+          current_version=$(yq e '.version' galaxy.yml)
+          base_version=$(echo "$current_version" | cut -d. -f1-2)
+          patch_version=$(echo "$current_version" | cut -d. -f3)
+          new_patch=$((patch_version + 1))
+          new_version="${base_version}.${new_patch}"
+          yq e -i ".version = \"${new_version}\"" galaxy.yml
+          echo "version=${new_version}" >> $GITHUB_OUTPUT
+
+      - name: Commit new version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git commit -am "chore: bump version to ${{ steps.version.outputs.version }}"
+          git tag v${{ steps.version.outputs.version }}
+          git push --follow-tags
+
+      - name: Build collection
+        run: |
+          cd pepesugar/system
+          ansible-galaxy collection build .
+
+      - name: Upload GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          files: pepesugar/system/pepesugar-system-*.tar.gz
